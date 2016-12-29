@@ -2,7 +2,7 @@
 
 
 //------------------------------------------------------------------------------/
-// FETCH GIT SUBDIR
+// FETCH GIT SUBDIR: https://github.com/lingtalfi/Git-fetch-subdir
 //------------------------------------------------------------------------------/
 
 
@@ -20,7 +20,6 @@ $dsDir = __DIR__;
 // SCRIPT
 //------------------------------------------------------------------------------/
 // https://developer.github.com/v3/#rate-limiting
-
 function getJson($url)
 {
     $ch = curl_init();
@@ -81,19 +80,24 @@ function fetchGitTree($author, $repository, $relPath, $dstDir)
                 if (false !== strpos($path, $relPath . "/")) {
                     $url = $info['url'];
                     $infoData = getJson($url);
-                    $content = $infoData['content'];
-                    $encoding = $infoData['encoding'];
-                    if ('base64' === $encoding) {
-                        $file = $dstDir . '/' . $path;
-                        $dir = dirname($file);
-                        if (is_string($dir) && !is_dir($dir)) {
-                            mkdir($dir, 0777, true);
-                        }
-                        $content = base64_decode($content);
-                        file_put_contents($file, $content);
 
+                    if (array_key_exists('content', $infoData)) {
+                        $content = $infoData['content'];
+                        $encoding = $infoData['encoding'];
+                        if ('base64' === $encoding) {
+                            $file = $dstDir . '/' . $path;
+                            $dir = dirname($file);
+                            if (is_string($dir) && !is_dir($dir)) {
+                                mkdir($dir, 0777, true);
+                            }
+                            $content = base64_decode($content);
+                            file_put_contents($file, $content);
+
+                        } else {
+                            throw new \Exception("Don't know how to handle encoding $encoding ($url)");
+                        }
                     } else {
-                        throw new \Exception("Don't know how to handle encoding $encoding ($url)");
+                        gitError($infoData);
                     }
                 }
             }
@@ -105,3 +109,6 @@ function fetchGitTree($author, $repository, $relPath, $dstDir)
 
 
 fetchGitTree($author, $repository, $relPath, $dsDir);
+
+
+
